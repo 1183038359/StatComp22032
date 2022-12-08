@@ -1,0 +1,172 @@
+---
+title: "Introduction to StatComp22032"
+author: "YuHang Zhao"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to StatComp22032}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+## Overview
+
+__StatComp22032__ is a simple R package  containing three functions,
+
+The three functions are __SGD_ min__(use SGD to estimate the x0 where f(x0) get the min value,it perform well when the power below 4,and You can specify the step size, iteration number and function form through the actual parameters ) 、 __Arima_ forecast__(Given time series data and specified prediction time span, future prediction values can be obtained and visualized) 、 __maxPoints__(Given a two-dimensional array, calculate the number of points in the line containing the most points among all data points that can be connected into a line).
+
+The source R code for __SGD_ min__ is as follows:
+```{r,eval=TRUE}
+SGD_min <- function(x,alpha,N,coefficient,powers) {
+
+  get_G <- function(x,coefficient,powers) {
+    gradient<-0
+    for (i in 1:length(coefficient)) {
+      gradient<-gradient+coefficient[i]*powers[i]*x^(powers[i]-1)
+    }
+    print(gradient)
+    return (gradient)
+  }
+
+  for (i in 1:N) {
+    if (! is.na(x)){
+    x<-x-alpha*get_G(x,coefficient,powers)
+    }
+    else{
+      x<-stats::rnorm(1,0,100)
+    }
+  }
+  print("The minimum function value is")
+  y<-0
+  
+  for (i in 1:length(coefficient)) {
+    y<-y+coefficient[i]*x^powers[i]
+  }
+  print(y)
+  #plot the curve
+  exp_par <- function(x) {
+    y<-0
+    len_par<-length(coefficient)
+    for (i in 1:len_par) {
+      y<-y+coefficient[i]*x^powers[i]
+    }
+    return (y)
+  }
+  graphics::curve(exp_par,-20,20)
+
+  return(x)
+  
+}
+```
+at last,we get the x0 value where f(x0) is the minmum value ,and $f^{'}(x_{0})$ is close to zero.
+
+The source R code for __Arima_ forecast__ is as follows:
+```{r,eval=TRUE}
+Arima_forecast <- function(start,end,h,path=0) {
+  library(StatComp22032)
+  #Implementing time series forecasting using Auto ARIMA method
+  # Dataset contains Californa_Wine_Production from 1980 to 2020 
+  # library(readxl)
+  if (path) {
+    data<-readxl::read_excel(path)
+  }
+  else{
+    data(data)
+  }
+  
+  data<-data['Production']
+  utils::str(data)
+  #We do not divide into test and train data.Hence not computing Error  metrics
+  #This code just shows the implementation of Auto arima in R
+  #Converting data to time series 
+  # library(stats)
+  data_ts=stats::ts(data, frequency = 1, start = start,end = end)
+  data_ts
+  
+  #Plotting time series
+  graphics::par(mfrow=c(1,1))
+  plot(data_ts)
+  
+  #ACF and PACF of data
+  graphics::par(mfrow=c(1,3))
+  stats::plot.ts(data_ts)
+  stats::acf(data_ts, lag.max=10)
+  stats::pacf(data_ts, lag.max=10)
+  
+  # Build time series model using auto.arima
+  # library(forecast)
+  
+  model_autoarima= forecast::auto.arima(data_ts,ic='aic')
+  model_autoarima
+  
+  #Forecasting using auto arima model
+  data_forecasts=forecast::forecast(model_autoarima,h=h)
+  par(mfrow=c(1,1))
+  plot(data_forecasts)
+  data_forecasts
+}
+```
+
+The code above mainly Call function  from packages stats and  forecast.
+Acf and pacf in stas calculate autocorrelation coefficient and partial autocorrelation coefficient respectively ,the auto.arima is used to train a model,and foreast's function is to calculate the future prediction.
+
+With regard to __maxPoints__,the corresponding c++ code is as follows:
+```{r,eval=TRUE,warning=FALSE}
+library(Rcpp)
+cppFunction(code='
+int maxPoints(NumericMatrix points) {
+  int len = points.nrow();
+  // when the number of points is not enough
+  if(len < 3) {
+    return len;
+  }
+  int maxNum = 2;
+  NumericVector maxrecord;
+  // Traverse every two points
+  for(double i = 0; i < len - 1; i ++) {
+    for(double j = i + 1; j < len; j ++) {
+      // count the Number of equal slopes.
+      NumericVector record ={i,j};
+      int count = 2;
+      double dx = points(i,0) - points(j,0);
+      double dy = points(i,1) - points(j,1);
+      // Compare with other points
+      for(int k = j + 1; k < len; k ++) {
+        // If the slopes are equal
+        if(dx * (points(i,1) - points(k,1)) == dy * (points(i,0) - points(k,0))) {
+          count ++;
+          record.push_back(k);
+        }
+      }
+      maxrecord=(maxNum>=count)?maxrecord:record;
+      maxNum = (maxNum>=count)? maxNum: count;
+      if(maxNum > len / 2) return maxNum;
+    }  
+  }
+  // Rprintf("the maxrecord is: ",maxrecord);
+  
+  return maxNum;
+}
+')
+```
+The main idea is to calculate whether the slopes between different points are equal by judging circularly.
+
+- The result of running the above code is as follows
+```{r,eval=TRUE}
+#SGD_min
+x<-stats::rnorm(1,0,100);N<-2000
+alpha<-0.005;coefficient<-c(1,3);powers<-c(2,4)
+x_last<-SGD_min(x,alpha,N,coefficient,powers)
+paste("The x corresponding to the function value is",x_last)
+
+#Arima_forecast
+# path<-"D:\\Code\\R_HW\\Californa_Wine_Production.xlsx"
+start <- 1980
+end <- 2020
+h<-36
+Arima_forecast(start,end,h)
+
+#maxPoints
+points<-matrix(c(1,1,2,2,3,3),3,2,byrow = TRUE)
+maxPoints(points)
+```
