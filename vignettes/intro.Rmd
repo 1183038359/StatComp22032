@@ -153,6 +153,7 @@ The main idea is to calculate whether the slopes between different points are eq
 
 - The result of running the above code is as follows
 ```{r,eval=TRUE}
+library(StatComp22032)
 #SGD_min
 x<-stats::rnorm(1,0,100);N<-2000
 alpha<-0.005;coefficient<-c(1,3);powers<-c(2,4)
