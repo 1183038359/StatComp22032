@@ -4,16 +4,16 @@
 \alias{Arima_forecast}
 \title{Use timeSeries' data  to predict wine production in the future using R.}
 \usage{
-Arima_forecast(path, start, end, h)
+Arima_forecast(start, end, h, path = 0)
 }
 \arguments{
-\item{path}{the file path of data stored.}
-
 \item{start}{the start of the timeseries,e.g 1999.}
 
 \item{end}{the end of the timeseries,e.g 2022.}
 
 \item{h}{Specify how long to forecast.}
+
+\item{path}{the file path of data stored.}
 }
 \value{
 Forecast results in the next few times.
@@ -27,6 +27,6 @@ path<-"D:\\\\Code\\\\R_HW\\\\Californa_Wine_Production.xlsx"
 start <- 1980
 end <- 2020
 h<-36
-Arima_forecast(path,start,end,h)
+Arima_forecast(start,end,h,path)
 }
 }

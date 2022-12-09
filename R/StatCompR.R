@@ -1,3 +1,8 @@
+#' @title A illustration dataset
+#' @name data
+#' @description A dataset used to illustrate the wine production in california from 1980-2020.
+NULL
+
 #' @title use SGD to estimate the x0 where f(x0) get the min value.
 #' @description estimating regression parameter by SGD.
 #' @param x a point in the axis x
@@ -70,7 +75,7 @@ SGD_min <- function(x,alpha,N,coefficient,powers) {
 #' start <- 1980
 #' end <- 2020
 #' h<-36
-#' Arima_forecast(path,start,end,h)
+#' Arima_forecast(start,end,h,path)
 #' }
 #' @importFrom Rcpp evalCpp
 #' @importFrom graphics par
@@ -79,13 +84,17 @@ SGD_min <- function(x,alpha,N,coefficient,powers) {
 #' @importFrom  readxl read_excel
 #' @importFrom  forecast auto.arima forecast
 #' @export
-Arima_forecast <- function(path,start,end,h) {
-  
+Arima_forecast <- function(start,end,h,path=0) {
+  library(StatComp22032)
   #Implementing time series forecasting using Auto ARIMA method
   # Dataset contains Californa_Wine_Production from 1980 to 2020 
   # library(readxl)
-  data<-readxl::read_excel(path)
-  
+  if (path) {
+    data<-readxl::read_excel(path)
+  }
+  else{
+    data(data)
+  }
   
   data<-data['Production']
   utils::str(data)
