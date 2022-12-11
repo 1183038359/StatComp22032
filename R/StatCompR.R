@@ -28,7 +28,7 @@ SGD_min <- function(x,alpha,N,coefficient,powers) {
     for (i in 1:length(coefficient)) {
       gradient<-gradient+coefficient[i]*powers[i]*x^(powers[i]-1)
     }
-    print(gradient)
+    # print(gradient)
     return (gradient)
   }
 
